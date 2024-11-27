@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        * { padding: 0; margin: 0; }
+        canvas { background: #000; display: block; }
+    </style>
+</head>
+<body>
+    
+<canvas id="pongCanvas"></canvas>
+
+<script>
+var canvas = document.getElementById("pongCanvas");
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+var ctx = canvas.getContext("2d");
+
+
+let score1 = 0;
+let score2 = 0;
+
+let disH = canvas.height;
+let disW = canvas.width;
+let disH2 = canvas.height/2;
+let disW2 = canvas.width/2;
+
+let fix = disW/100;
+
+let x1, y1, z1;
+
+let fov = 3000;
+
+let frame = 0;
+
+let PI = Math.PI;
+let TWO_PI = PI*2;
+
+class particle {
+    constructor(TPX, TPY) {
+        this.TPX = TPX;
+        this.TPY = TPY;
+    }
+}
+function animate() {
+    background(rgb(0,0,0,10));
+    
+    var gradient = ctx.createLinearGradient(disW, disH2+disH2/2.5, disW, disH);
+    gradient.addColorStop(0, 'black');
+    gradient.addColorStop(1, rgb(150,100,240,25));
+
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, disW, disH);
+
+    var gradient = ctx.createRadialGradient(disW2, disH2, 100, disW2, disH2, 600);
+
+    gradient.addColorStop(0, rgb(150,100,240,45));
+    gradient.addColorStop(1,rgb(0,0,0,0));
+
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, disW, disH);
+
+    let indices = [];
+    let vertices = [];
+    let n = 250;
+    let offset = 2.0 / n;
+    let increment = Math.PI * (3.0 - Math.sqrt(5.0));
+
+    for (let i = 0; i < n; i++) {
+        let y = ((i * offset) - 1) + (offset / 2);
+        let r = Math.sqrt(1 - Math.pow(y, 2));
+
+        let phi = ((i + 1) % n) * increment;
+
+        let x = Math.cos(phi+frame/200.0) * r;
+        let z = Math.sin(phi+frame/200.0) * r;
+
+        vertices.push([x, y, z]);
+        indices.push(i);
+    }
+
+    requestAnimationFrame(animate);
+    for (let i = 0; i < indices.length; i++) {
+        let mass = norm(vertices[i][0], vertices[i][1], vertices[i][2]);
+        x1 = mass[0];
+        y1 = mass[1];
+        z1 = mass[2];
+        
+        setPix(x1, y1, z1+15);
+    }
+    frame++;
+
+}
+
+function norm(x, y, z) {
+    var length = Math.sqrt(x * x + y * y + z * z);
+    return [x / length*fov, y / length*fov, z / length];
+}
+function setPix(x, y, z) {
+    for (let i = 100; i < 300; i+= 40) {
+        setEps(x/z,y/z,i/z,i/z,rgb(150,100,240,35));
+    }
+}
+
+function sin(n) {
+    return Math.sin(n);
+}
+function cos(n) {
+    return Math.cos(n);
+}
+function rgb(r, g, b, a = 255) {
+    return "rgb("+r+","+g+","+b+","+(a/255)+")";
+}
+function r(n1) {
+    return Math.round(n1);
+}
+function rand(n1, n2) {
+    return Math.random()*(Math.abs(n1)+Math.abs(n2))+n1;
+}
+
+function background(col) {
+    setBlock(0, 0, disW*2, disH*2, col);
+}
+function setText(text, x, y, size, color) {
+    ctx.textAlign = 'center'; 
+    ctx.font = size + 'px Arial';
+    ctx.fillStyle = color;
+    ctx.fillText(text, x, y);
+}
+function setBlock(x, y, sizeX, sizeY, color) {
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.rect(disW2+x-sizeX/2, disH2-y-sizeY/2, sizeX+1, sizeY+1);
+    ctx.fill();
+}
+function setImage(img2, x, y, sizeX, sizeY) {
+    ctx.beginPath();
+    ctx.drawImage(img2, disW2+x-sizeX/2, disH2-y-sizeY/2, sizeX+1, sizeY+1);
+}
+function setEps(x, y, sizeX, sizeY, color) {
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.ellipse(disW2+x, disH2-y, sizeX/2, sizeY/2, 0, 0, 2 * Math.PI);
+    ctx.fill();
+}
+function setLine(x1, y1, x2, y2, color, width) {
+    ctx.strokeStyle = color;
+    ctx.lineWidth = width;
+    ctx.beginPath();
+    ctx.moveTo(disW2 + x1, disH2 - y1);
+    ctx.lineTo(disW2 + x2, disH2 - y2);
+    ctx.stroke();
+}
+function setTriangle(x1, y1, x2, y2, x3, y3, color) {
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.moveTo(disW2 + x1, disH2 - y1);
+    ctx.lineTo(disW2 + x2, disH2 - y2);
+    ctx.lineTo(disW2 + x3, disH2 - y3);
+    ctx.closePath();
+    ctx.fill();
+}
+function leng(n1, n2) {
+    return (n1**2+n2**2)**(1/2);
+}
+
+animate();
+
+</script>
+
+</body>
+</html>

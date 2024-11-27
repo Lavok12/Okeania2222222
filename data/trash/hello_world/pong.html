@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        * { padding: 0; margin: 0; }
+        canvas { background: #000; display: block; }
+    </style>
+</head>
+<body>
+    
+<canvas id="pongCanvas"></canvas>
+
+<script>
+var canvas = document.getElementById("pongCanvas");
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+var ctx = canvas.getContext("2d");
+
+var ball = {
+    x: canvas.width / 2,
+    y: canvas.height / 2,
+    dx: 3,
+    dy: 3,
+    radius: 10
+};
+
+var paddleHeight = 125;
+var paddleWidth = 20;
+var paddle1 = (canvas.height - paddleHeight) / 2;
+var paddle2 = (canvas.height - paddleHeight) / 2;
+var paddleSpeed = 6;
+
+var upArrowPressed = false;
+var downArrowPressed = false;
+var wKeyIsPressed = false;
+var sKeyIsPressed = false;
+
+let score1 = 0;
+let score2 = 0;
+
+function animate() {
+    ctx.beginPath();
+    ctx.fillStyle = "#00000033";
+    ctx.rect(0, 0, canvas.width, canvas.height);
+    
+    ctx.fill();
+
+    ctx.closePath();
+    for (var x = 0; x < canvas.width; x+=40) {
+        for (var y = 0; y < canvas.height; y+=40) {
+            setRect(ctx, x+2, y+2, 35, 35, "rgb(10.3, 8.6, 20.1, 0.5)")
+        }   
+    }
+    
+    drawBall();
+    drawPaddle1();
+    drawPaddle2();
+    ballMove();
+    paddle1Move();
+    paddle2Move();
+    requestAnimationFrame(animate);
+
+
+    for (var x = 0; x <= Math.PI*2; x+=0.1) {
+        setText(ctx, canvas.width/2+Math.sin(x)*4, 100+Math.cos(x)*4, 70, score1+" / "+score2, 'rgb(25, 20, 50)');
+    }
+    setText(ctx, canvas.width/2, 100, 70, score1+" / "+score2, 'rgb(103, 86, 201)');
+
+    
+}
+
+function ballMove() {
+    ball.x += ball.dx;
+    ball.y += ball.dy;
+    if (ball.y + ball.radius > canvas.height || ball.y - ball.radius < 0) {
+        ball.dy *= -1; // ball is bouncing back from top/bottom
+    }
+    // ball and paddle1 collision logic
+    if (ball.y + ball.radius > paddle1 && ball.y - ball.radius < paddle1 + paddleHeight && ball.dx < 0) {
+        if (ball.x - ball.radius < paddleWidth) {
+            ball.dx *= -1;
+            ball.dx *= 1.05;
+            ball.dy *= 1.05;
+
+            ball.dy += Math.random(-4,4);
+            
+            paddle1 += (paddleHeight-paddleHeight/1.03)/2;
+            paddle2 += (paddleHeight-paddleHeight/1.03)/2;
+            
+            paddleHeight = paddleHeight / 1.03;
+        }
+        
+    }
+    // ball and paddle2 collision logic
+    if (ball.y + ball.radius > paddle2 && ball.y - ball.radius < paddle2 + paddleHeight && ball.dx > 0) {
+        if (ball.x + ball.radius > canvas.width - paddleWidth) {
+            ball.dx *= -1;
+            ball.dx *= 1.05;
+            ball.dy *= 1.05;
+
+            ball.dy += Math.random(-4,4);
+
+            paddle1 += (paddleHeight-paddleHeight/1.03)/2;
+            paddle2 += (paddleHeight-paddleHeight/1.03)/2;
+            
+            paddleHeight = paddleHeight / 1.03;
+        }
+    }
+    // if ball hits left or right wall, reset the ball in the center
+    if (ball.x + ball.radius > canvas.width) {
+        ball.x = canvas.width / 2;
+        ball.y = canvas.height / 2;
+        ball.dx = -ball.dx/Math.abs(ball.dx)*3;
+        ball.dy = 3;
+
+        score1++;
+
+        paddleHeight = 125;
+
+        paddle1 = (canvas.height - paddleHeight) / 2;
+        paddle2 = (canvas.height - paddleHeight) / 2;
+    }
+    if (ball.x - ball.radius < 0) {
+        ball.x = canvas.width / 2;
+        ball.y = canvas.height / 2;
+        ball.dx = -ball.dx/Math.abs(ball.dx)*3;
+        ball.dy = 3;
+
+        score2++;
+
+        paddleHeight = 125;
+
+        paddle1 = (canvas.height - paddleHeight) / 2;
+        paddle2 = (canvas.height - paddleHeight) / 2;
+    }
+}
+
+function paddle1Move() {
+    if (wKeyIsPressed && paddle1 > 0) {
+        paddle1 -= paddleSpeed;
+    } else if (sKeyIsPressed && paddle1 < canvas.height - paddleHeight) {
+        paddle1 += paddleSpeed;
+    }
+}
+
+function paddle2Move() {
+    if (upArrowPressed && paddle2 > 0) {
+        paddle2 -= paddleSpeed;
+    } else if (downArrowPressed && paddle2 < canvas.height - paddleHeight) {
+        paddle2 += paddleSpeed;
+    }
+}
+
+function drawBall() {
+    ctx.beginPath();
+    ctx.fillStyle = 'rgb(83, 66, 151)';
+    ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2, false);
+    ctx.fill();
+    ctx.closePath();
+}
+
+function drawPaddle1() {
+    ctx.beginPath();
+    ctx.fillStyle = 'rgb(83, 66, 151)';
+    ctx.rect(0, paddle1, paddleWidth/5, paddleHeight);
+    ctx.rect(paddleWidth/5*4, paddle1, paddleWidth/5, paddleHeight);
+    
+    ctx.fill();
+    ctx.closePath();
+}
+
+function drawPaddle2() {
+    ctx.beginPath();
+    ctx.fillStyle = 'rgb(83, 66, 151)';
+    ctx.rect(canvas.width - paddleWidth, paddle2, paddleWidth/5, paddleHeight);
+    ctx.rect(canvas.width - paddleWidth+paddleWidth/5*4, paddle2, paddleWidth/5, paddleHeight);
+    
+    ctx.fill();
+    ctx.closePath();
+}
+function setText(ctx, x, y, size, text, color) {
+    ctx.textAlign = 'center'; 
+    ctx.font = size + 'px Arial';  // Устанавливаем размер и шрифт текста
+    ctx.fillStyle = color;  // Устанавливаем цвет текста
+    ctx.fillText(text, x, y);  // Выводим текст на канвасе
+}
+function setRect(ctx, x, y, sizeX, sizeY, color) {
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.rect(x, y, sizeX, sizeY);
+    ctx.fill();
+}
+
+window.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+        window.location.href = 'file.html';
+    }
+});
+window.addEventListener("keydown", function(event) {
+    switch(event.keyCode) {
+        case 87: // w key
+            wKeyIsPressed = true;
+            break;
+        case 83: // s key
+            sKeyIsPressed = true;
+            break;
+        case 38: // up arrow
+            upArrowPressed = true;
+            break;
+        case 40: // down arrow
+            downArrowPressed = true;
+            break;
+    }
+}, false);
+
+window.addEventListener("keyup", function(event) {
+    switch(event.keyCode) {
+        case 87: // w key
+            wKeyIsPressed = false;
+            break;
+        case 83: // s key
+            sKeyIsPressed = false;
+            break;
+        case 38: // up arrow
+            upArrowPressed = false;
+            break;
+        case 40: // down arrow
+            downArrowPressed = false;
+            break;
+    }
+}, false);
+
+animate();
+
+</script>
+
+</body>
+</html>
